@@ -226,8 +226,10 @@ The test will look like this:
 <ul>
 <li><b>Fixed typos.</b></li>
 <li><b>Fixed minor bugs.</b></li>
+<li><b>Updated README.md.</b></li>
 <li><b>Now this module has a <a href="https://des-docs.tk">documentation website</a>!</b></li>
-<li><b>Added an 'Economy.docs' property that contains a link to the docs website.</b></li>
+<li><b>Added an 'Economy.docs' property that contains a link to the documentation website.</b></li>
+<li><b>I think this is the last version of this module. Next versions would be only bugfixes or people's ideas. Thank you for using this module!</b></li>
 </ul>
 
 ## Useful Links

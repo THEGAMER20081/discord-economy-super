@@ -14,7 +14,6 @@ Welcome to the `discord-economy-super v1.3.0` documentation.
 <b>Node.js 14.0.0 or newer is required. Otherwise, the module won't work.</b><br>
 ```console
 npm i discord-economy-super
-yarn add discord-economy-super
 ```
 
 ## About
@@ -36,7 +35,7 @@ yarn add discord-economy-super
 ## Useful Links
 <ul>
 <li><b><a href = "https://www.npmjs.com/package/discord-economy-super">NPM</a></b></li>
-<li><b><a href = "https://github.com/shadowplay1/discord-economy-super">Github</a></b></li>
+<li><b><a href = "https://github.com/shadowplay1/discord-economy-super">GitHub</a></b></li>
 <li><b><a href = "https://github.com/shadowplay1/discord-economy-super/tree/main/examples">Examples</a></b></li>
 <li><b><a href = "https://discord.gg/afUTRzfb">Discord Server</a></b></li>
 </ul>

@@ -1,9 +1,8 @@
 declare module 'discord-economy-super' {
-    import { EventEmitter } from 'events';
     /**
      * The Economy class.
      */
-    class Economy extends EventEmitter {
+    class Economy {
         /**
          * Module version.
          */
@@ -153,21 +152,9 @@ declare module 'discord-economy-super' {
          * @returns If started successfully: true; else: Error instance.
          */
         init(): Promise<true | Error>
-        on<K extends keyof EconomyEvents>(
-            event: K,
-            listener: (...args: EconomyEvents[K][]) => void
-        ): this;
-
-        once<K extends keyof EconomyEvents>(
-            event: K,
-            listener: (...args: EconomyEvents[K][]) => void
-        ): this;
-
+        on<K extends keyof EconomyEvents>(event: K, listener: (...args: EconomyEvents[K][]) => void): this;
+        once<K extends keyof EconomyEvents>(event: K, listener: (...args: EconomyEvents[K][]) => void): this;
         emit<K extends keyof EconomyEvents>(event: K, ...args: EconomyEvents[K][]): boolean;
-        /**
-         * Initializates the module. Please note: you don't need to use this method, it already starts in constructor.
-         * @returns If started successfully: true; else: Error instance.
-         */
     }
     /**
     * Balance methods object.
@@ -370,7 +357,8 @@ declare module 'discord-economy-super' {
         constructor(message: string | Error)
     }
     namespace Economy {
-        declare const version: '1.2.7'
+        const version: '1.3.0'
+        const docs: 'https://des-docs.tk'
     }
     export = Economy;
 }
@@ -593,15 +581,15 @@ interface EconomyEvents {
      */
     shopItemBuy: ItemData;
     /**
-     * Emits when someone's used the item from his inventory
+     * Emits when someone's used the item from his inventory.
      */
     shopItemUse: ItemData;
     /**
-     * Emits when the module is ready
+     * Emits when the module is ready.
      */
     ready: void,
     /**
-     * Emits when the module is destroyed
+     * Emits when the module is destroyed.
      */
     destroy: void,
 }

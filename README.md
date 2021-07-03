@@ -5,309 +5,28 @@
 
 <b>Discord Economy Super</b> - Easy and customizable economy framework for your [Discord Bot](https://discord.js.org/#/).
 
+## Why?
+<ul>
+<li><b>Typescript Support</b></li>
+<li><b>Customizable</b></li>
+<li><b>Easy to use</b></li>
+<li><b>Beginner friendly</b></li>
+<li><b>Flexible</b></li>
+<li><b>Shop</b></li>
+<li><b>Bank Balance</b></li>
+</ul>
+
 ## Install
 <b>Please note:</br><b>
 <b>Node.js 14.0.0 or newer is required.</b><br>
-<b>All types in brackets mean the type of what the method or event returns.</b>
 ```console
 npm i discord-economy-super
 ```
 
-## Table of Contents
-<ul>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#starting">Starting</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#constructor-options">Constructor Options</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#module-methods">Module Methods</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#module-properties">Module Properties</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#module-events">Module Events</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#example-events-usage">Example Events Usage</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#balance-methods">Balance Methods</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#bank-methods">Bank Methods</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#shop-methods">Shop Methods</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#changelog">Changelog</a></b></li>
-  <li><b><a href="https://www.npmjs.com/package/discord-economy-super#useful-links">Useful Links</a></b></li>
-</ul>
+## [[Module Documentation]](https://des-docs.tk)
 
-## Starting
-<b>Let's create a simple Discord.js Client:</b>
-
-```js
-const { Client, Intents } = require('discord.js'); // npm i discord.js
-const client = new Client({ partials: ['CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 'REACTION', 'USER'], ws: { intents: Intents.ALL } });
-
-client.on('ready', () => {
-  console.log(`${bot.user.tag} is ready!`);
-});
-
-client.login('token') // https://discord.com/developers/applications
-```
-<b>Now we need to import and initialize 'discord-economy-super':</b>
-
-```js
-const { Client, Intents } = require('discord.js') // npm i discord.js
-const client = new Client({
-    partials: ['CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 'REACTION', 'USER'], 
-    ws: {
-        intents: Intents.ALL 
-    } 
-});
-
-const Economy = require('discord-economy-super');
-const eco = new Economy({
-  storagePath: './storage.json', // Full path to a JSON File. Default: './storage.json'.
-  checkStorage: true, // Checks the if database file exists and if it has errors. Default: true.
-  dailyCooldown: 60000 * 60 * 24, // Daily Cooldown, ms (24 Hours = 1 Day). Default: 24 Hours (60000 * 60 * 24) ms.
-  workCooldown: 60000 * 60, // Work Cooldown, ms (1 Hour). Default: 1 Hour (60000 * 60) ms.
-  weeklyCooldown: 60000 * 60 * 24 * 7, // Cooldown for Weekly Command (in ms). Default: 7 Days (60000 * 60 * 24 * 7) ms
-  dailyAmount: 100, // Daily Amount. Default: 100.
-  workAmount: [10, 50], // Work Amount: first element is min value, second is max value (It also can be a Number). Default: [10, 50].
-  weeklyAmount: 1000, // Amount of money for Weekly Command. Default: 1000.
-  updateCountdown: 1000, // Checks for if storage file exists in specified time (in ms). Default: 1000.
-  dateLocale: 'ru', // The region (example: ru; en) to format date and time. Default: 'ru'.
-  updater: {
-        checkUpdates: true, // Sends the update state message in console on start. Default: true.
-        upToDateMessage: true // Sends the message in console on start if module is up to date. Default: true.
-    },
-    errorHandler: {
-        handleErrors: true, // Handles all errors on start. Default: true.
-        attempts: 5, // Amount of attempts to load the module. Use 'null' for infinity attempts. Default: 5.
-        time: 3000 // Time between every attempt to start the module. Default: 3000.
-    }
-});
-
-client.on('ready', () => {
-  console.log(`${bot.user.tag} is ready!`);
-});
-
-client.login('token') // https://discord.com/developers/applications
-```
-<br>
-<b>Now I will explain everything.</b>
-<b>This Module has a Constructor to initialize this Economy Module.</b>
-<br>
-
-## Constructor Options
-<ul>
-  <li><b>options.storagePath</b>: <b>Path for JSON File. Default: './storage.json.' (String)</b></li>
-  <li><b>options.checkStorage</b>: <b>Checks the if database file exists and if it has errors. Default: true. (Boolean)</b></li>
-  <li><b>options.dailyCooldown</b>: <b>Cooldown for Daily Command (in ms). Default: 24 Hours (60000 * 60 * 24) ms. (Number)</b></li>
-  <li><b>options.dailyAmount</b>: <b>Amount of money for Daily Command. Default: 100. (Number)</b></li>
-  <li><b>options.workCooldown</b>: <b>Cooldown for Work Command (in ms). Default: 1 Hour (60000 * 60) ms. (Number)</b></li>
-  <li><b>options.workAmout</b>: <b>Amount of money for Work Command. Default: [10, 50]. (Number)</b></li>
-  <li><b>options.updateCountdown</b>: <b>Checks for if storage file exists in specified time (in ms). Default: 1000. (Number)</b></li>
-  <li><b>options.dateLocale</b>: <b>The region (example: ru; en) to format date and time. Default: ru. (String)</b></li>
-  <li><b>options.updater</b>: <b>Update Checker options object:</b>
-   <ul>
-   <li><b>options.updater.checkUpdates.</b>: <b>Sends the update state message in console on start. Default: true. (Boolean)</b></li>
-   <li><b>options.updater.upToDateMessage</b>: <b> Sends the message in console on start if module is up to date. Default: true. (Boolean)</b></li>
-</ul>
-  <li><b>options.errorHandler</b>: <b>Error Handler options object:</b>
-   <ul>
-   <li><b>options.errorHandler.handleErrors.</b>: <b>Handles all errors on startup. Default: true. (Boolean)</b></li>
-   <li><b>options.errorHandler.attempts</b>: <b>Amount of attempts to load the module. Use 'null' for infinity attempts. Default: 5. (Number)</b></li>
-    <li><b>options.errorHandler.time</b>: <b>Time between every attempt to start the module. Default: 3000. (Number)</b></li>
-</ul>
-</ul>
-<b>Once the module starts, the update checker will show you a beautiful message in your console!</b>
-
-![Up To Date Example](https://cdn.discordapp.com/attachments/824016114191302699/830855168932315136/Screenshot_6.png)
-
-![Out Of Date Example](https://cdn.discordapp.com/attachments/824016114191302699/830855167120244736/Screenshot_5.png)
-
-## Module Methods
-<ul>
-  <li><b>daily(memberID, guildID)</b>: <b>Adds a daily reward on user's balance. (Object)</b></li>
-  <li><b>work(memberID, guildID)</b>: <b>Adds a work reward on user's balance. (Object)</b></li>
-  <li><b>weekly(memberID, guildID)</b>: <b>Adds a weekly reward on user's balance. (Object)</b></li>
-  <br>
-  <li><b>getDailyCooldown(memberID, guildID)</b>: <b>Returns a user's daily Cooldown. (Number)</b></li>
-  <li><b>getWorkCooldown(memberID, guildID)</b>: <b>Returns a user's work Cooldown. (Number)</b></li>
-  <li><b>getWeeklyCooldown(memberID, guildID)</b>: <b>Returns a user's weekly Cooldown. (Number)</b></li>
-  <br>
-  <li><b>clearDailyCooldown(memberID, guildID)</b>: <b>Clears user's daily cooldown. (Boolean)</b></li>
-  <li><b>clearWorkCooldown(memberID, guildID)</b>: <b>Clears user's work cooldown. (Boolean)</b></li>
-  <li><b>clearWeeklyCooldown(memberID, guildID)</b>: <b>Clears user's weekly cooldown. (Boolean)</b></li>
-  <br>
-  <li><b>all()</b>: <b>Returns the database contents. (Object)</b></li>
-  <li><b>checkUpdates()</b>: <b>Checks for if the module is up to date. Returns a promise with data object. (Promise: Object)</b></li>
-  <br>
-  <li><b>removeGuild(guildID)</b>: Fully removes the guild from database. (Boolean)</li>
-  <li><b>removeUser(memberID, guildID)</b>: Removes the user from database. (Boolean)</li>
-  <br>
-  <li><b>clearStorage()</b>: Clears the storage file. (Boolean)</li>
-  <li><b>kill()</b>: Kills the Economy instance. (Economy Instance)</li>
-  <li><b>init()</b>: Starts the module. (Promise: Boolean)</li>
-</ul>
-
-## Module Properties
-<ul>
-<li><b>Economy.version</b>: <b>Returns the module version. (Boolean)</b></li>
-<li><b>Economy.options</b>: <b>Returns the options object that you put in the Constructor (Object)</b></li>
-<li><b>Economy.EconomyError</b>: <b>Returns the error class that this module is using. (Class)</b></li>
-<li><b>Economy.shop</b>: <b>Methods to manage and use the shop on your Discord server. (Object)</b></li>
-<li><b>Economy.ready</b>: <b>Module ready status. (Boolean)</b></li>
-<li><b>Economy.errored</b>: <b>Module errored status. (Boolean)</b></li>
-<li><b>Economy.interval</b>: <b>Database checking interval. (NodeJS.Timeout)</b></li>
-<li><b>Economy.errors</b>: <b>Module errors object. (Object)</b></li>
-</ul>
-
-## Module Events
-<ul>
-<li><b>Economy.on('balanceSet')</b>: <b>Emits when you set the balance. (Object)</b></li>
-<li><b>Economy.on('balanceAdd')</b>: <b>Emits when you add money on user's balance. (Object)</b></li>
-<li><b>Economy.on('balanceSubtract')</b>: <b>Emits when you subtract money from user's balance. (Object)</b></li>
-<br>
-<li><b>Economy.on('bankSet')</b>: <b>Emits when you set the bank balance. (Object)</b></li>
-<li><b>Economy.on('bankAdd')</b>: <b>Emits when you add money on user's bank balance. (Object)</b></li>
-<li><b>Economy.on('bankSubtract')</b>: <b>Emits when you subtract money from user's bank balance. (Object)</b></li>
-<br>
-<li><b>Economy.on('shopAddItem')</b>: <b>Emits when you add the item in the guild shop. (Object)</b></li>
-<li><b>Economy.on('shopEditItem')</b>: <b>Emits when you edit the item in the guild shop. (Object)</b></li>
-<li><b>Economy.on('shopRemoveItem')</b>: <b>Emits when you remove the item from the guild shop. (Object)</b></li>
-<li><b>Economy.on('shopClear')</b>: <b>Emits when you clear the shop. (Boolean)</b></li>
-<li><b>Economy.on('shopItemBuy')</b>: <b>Emits when someone just bought the item from the shop. (Object)</b></li>
-<li><b>Economy.on('shopItemUse')</b>: <b>Emits when someone just used the item from his inventory. (Object)</b></li>
-<br>
-<li><b>Economy.on('ready')</b>: <b>Emits when the economy instance is ready. (Void)</b></li>
-<li><b>Economy.on('destroy')</b>: <b>Emits when the economy instance is destroyed. (Void)</b></li>
-</ul>
-
-## Example Events Usage
-```js
-const { Client, Intents } = require('discord.js') // npm i discord.js
-const client = new Client({
-    partials: ['CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 'REACTION', 'USER'], 
-    ws: {
-        intents: Intents.ALL 
-    }
-});
-
-const Economy = require('discord-economy-super');
-const eco = new Economy({
-  storagePath: './storage.json', // Full path to a JSON File. Default: './storage.json'.
-  checkStorage: true, // Checks the if database file exists and if it has errors. Default: true.
-  dailyCooldown: 60000 * 60 * 24, // Daily Cooldown, ms (24 Hours = 1 Day). Default: 24 Hours (60000 * 60 * 24) ms.
-  workCooldown: 60000 * 60, // Work Cooldown, ms (1 Hour). Default: 1 Hour (60000 * 60) ms.
-  weeklyCooldown: 60000 * 60 * 24 * 7, // Cooldown for Weekly Command (in ms). Default: 7 Days (60000 * 60 * 24 * 7) ms
-  dailyAmount: 100, // Daily Amount. Default: 100.
-  workAmount: [10, 50], // Work Amount: first element is min value, second is max value (It also can be a Number). Default: [10, 50].
-  weeklyAmount: 1000, // Amount of money for Weekly Command. Default: 1000.
-  updateCountdown: 1000, // Checks for if storage file exists in specified time (in ms). Default: 1000.
-  dateLocale: 'ru', // The region (example: ru; en) to format date and time. Default: 'ru'.
-  updater: {
-        checkUpdates: true, // Sends the update state message in console on start. Default: true.
-        upToDateMessage: true // Sends the message in console on start if module is up to date. Default: true.
-    },
-    errorHandler: {
-        handleErrors: true, // Handles all errors on start. Default: true.
-        attempts: 5, // Amount of attempts to load the module. Use 'null' for infinity attempts. Default: 5.
-        time: 3000 // Time between every attempt to start the module. Default: 3000.
-    }
-});
-
-client.on('ready', () => {
-  console.log(`${bot.user.tag} is ready!`);
-});
-
-// balance events
-eco.on('balanceSet', balance => {
-    console.log(`Someone's just set ${balance.amount} coins for balance for member ${balance.memberID} on guild ${balance.guildID}. His bank balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'`)
-})
-eco.on('balanceAdd', balance => {
-    console.log(`Someone's just added ${balance.amount} coins for balance for member ${balance.memberID} on guild ${balance.guildID}. His bank balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'`)
-})
-eco.on('balanceSubtract', balance => {
-    console.log(`Someone's just subtracted ${balance.amount} coins from balance for member ${balance.memberID} on guild ${balance.guildID}. His balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'.`)
-})
-
-
-// bank balance events
-eco.on('bankSet', balance => {
-    console.log(`Someone's just set ${balance.amount} coins in bank for member ${balance.memberID} on guild ${balance.guildID}. His bank balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'`)
-})
-eco.on('bankAdd', balance => {
-    console.log(`Someone's just added ${balance.amount} coins in bank for member ${balance.memberID} on guild ${balance.guildID}. His bank balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'`)
-})
-eco.on('bankSubtract', balance => {
-    console.log(`Someone's just subtracted ${balance.amount} coins from bank for member ${balance.memberID} on guild ${balance.guildID}. His bank balance is ${balance.balance} coins now.\nReason: ${balance.reason}\nOperation type: '${balance.type}'`)
-})
-
-// shop events
-eco.on('shopAddItem', item => {
-    console.log(`Someone's just added an item in the shop!\nItem data:\nID: ${item.id}\nName: ${item.itemName}\nPrice: ${item.price}\nDescription: ${item.description}\nMessage on use: ${item.message}\nMax amount of item in inventory: ${item.maxAmount}\nRole ID: ${item.role || 'Not specified'}`)
-})
-eco.on('shopRemoveItem', item => {
-    console.log(`Someone's just removed an item from the shop!\nItem data:\nID: ${item.id}\nName: ${item.itemName}\nPrice: ${item.price}\nDescription: ${item.description}\nMessage on use: ${item.message}\nMax amount of item in inventory: ${item.maxAmount}\nRole ID: ${item.role || 'Not specified'}`)
-})
-eco.on('shopEditItem', item => {
-    console.log(`Someone's just edited an item in the shop!\nID: ${item.id}\Guild ID: ${item.guildID}\nWhat changed: ${item.changed}\nBefore: ${item.oldValue}\nAfter: ${item.newValue}`)
-})
-eco.on('shopItemBuy', item => {
-    console.log(`Someone's just bought an item from the shop!\nItem data:\nID: ${item.id}\nName: ${item.itemName}\nPrice: ${item.price}\nDescription: ${item.description || 'Not specified'}\nMessage on use: ${item.message || 'Not specified'}\nMax amount of item in inventory: ${item.maxAmount || 'Any'}\nRole ID: ${item.role || 'Not specified'}`)
-})
-eco.on('shopItemUse', item => {
-    console.log(`Someone's just used an item!\nItem data:\nID: ${item.id}\nName: ${item.itemName}\nPrice: ${item.price}\nDescription: ${item.description || 'Not specified'}\nMessage on use: ${item.message || 'Not specified'}\nMax amount of item in inventory: ${item.maxAmount || 'Any'}\nRole ID: ${item.role || 'Not specified'}`)
-})
-eco.on('shopClear', cleared => {
-  if(cleared) console.log('The shop was cleared successfully!')
-  else console.log('Cannot clear the shop!')
-})
-
-
-// core events
-eco.on('ready', () => {
-    console.log('Economy is ready!')
-})
-eco.on('destroy', () => {
-    console.log('Economy was destroyed.')
-})
-
-client.login('token') // https://discord.com/developers/applications
-```
-<br>
-
-## Balance Methods
-<ul>
-    <li><b>fetch(memberID, guildID)</b>: <b>Returns the user's balance. (Number)</b></li>
-    <li><b>set(amount, memberID, guildID, reason)</b>: <b>Sets money to user's balance. (Number)</b></li>
-    <li><b>add(amount, memberID, guildID, reason)</b>: <b>Adds money to user's balance. (Number)</b></li>
-    <li><b>subtract(amount, memberID, guildID, reason)</b>: <b>Subtracts money from user's balance. (Number)</b></li>
-    <li><b>leaderboard(guildID)</b>: <b>Returns a money leaderboard array. (Array)</b></li>
-</ul>
-
-## Bank Methods
-<ul>
-    <li><b>fetch(memberID, guildID)</b>: <b>Returns the user's bank balance. (Number)</b></li>
-    <li><b>set(amount, memberID, guildID, reason)</b>: <b>Sets money to user's bank balance. (Number)</b></li>
-    <li><b>add(amount, memberID, guildID, reason)</b>: <b>Adds money to user's bank balance. (Number)</b></li>
-    <li><b>subtract(amount, memberID, guildID, reason)</b>: <b>Subtracts money from user's bank balance. (Number)</b></li>
-    <li><b>leaderboard(guildID)</b>: <b>Returns a bank balance leaderboard array. (Array)</b></li>
-</ul>
-
-## Shop Methods
-<ul>
-<li><b>Economy.shop.addItem(guildID, options)</b>: <b>Creates an item in shop. (Object)</b></li>
-   <ul>
-   <li><b>options.itemName</b>: <b>Name for the item. (String)</b></li>
-   <li><b>options.price</b>: <b>Price of the item. (Number)</b></li>
-   <li><b>options.message</b>: <b>Item message that will be returned on Economy.shop.buy() method. [Optional] (String)</b></li>
-   <li><b>options.description</b>: <b>Description of the item. [Optional] (String)</b></li> 
-   <li><b>options.maxAmount</b>: <b>Max amount of item that user can hold in his inventory. [Optional] (Number)</b></li>
-   <li><b>options.role</b>: <b>A role ID that bot will give to others users. Please note: you need to specify a bot client in 'Economy.shop.useItem' method if you need to give a role to user on Discord server. [Optional] (String)</b></li>
-</ul>
-</li> 
-<li><b>Economy.shop.buy(itemID, memberID, guildID, reason)</b>: <b>Buys the item from the shop. But if user try to buy an item when he reached the max amount of item in his inventory, it will return a 'max' string. (Boolean | String)</b></li>
-<li><b>Economy.shop.clear(guildID)</b>: <b>Clears the shop. (Boolean)</b></li>
-<li><b>Economy.shop.clearHistory(memberID, guildID)</b>: <b>Clears the user's purchases history. (Boolean)</b></li>
-<li><b>Economy.shop.clearInventory(memberID, guildID)</b>: <b>Clears the user's inventory. (Boolean)</b></li>
-<li><b>Economy.shop.editItem(itemID, guildID, arg, value)</b>: <b>Edits the item in shop. The 'arg' parameter must be one of these values: 'description', 'price', 'itemName', 'message', 'maxAmount' and 'role'. (Boolean)</b></li>
-<li><b>Economy.shop.history(memberID, guildID)</b>: <b>Shows the user's purchases history. (Array)</b></li>
-<li><b>Economy.shop.inventory(memberID, guildID)</b>: <b>Shows all items in user's inventory. (Array)</b></li>
-<li><b>Economy.shop.list(guildID)</b>: <b>Shows all items in the shop. (Array)</b></li>
-<li><b>Economy.shop.removeItem(memberID, guildID)</b>: <b>Removes an item from the shop. (Boolean)</b></li>
-<li><b>Economy.shop.searchItem(memberID, guildID)</b>: <b>Searches for the item in the shop. (Object)</b></li>
-<li><b>Economy.shop.useItem(itemID, memberID, guildID, client)</b>: <b>Uses the item from the user's inventory. Please note: 'client' parameter is your bot client and it's required only if your guild shop includes the items that will give a role to other user. If you specified your bot client, user will get his role once he buy the item. (Boolean)</b></li>
-</ul>
+## Help
+<b>If you don't understand something in the documentation or you are experiencing problems, feel free to join our <a href = "https://discord.gg/afUTRzfb">Support Server</a>.</b>
 
 ## Changelog
 <b>1.0.1</b>
@@ -375,7 +94,7 @@ client.login('token') // https://discord.com/developers/applications
 <li><b>Now every balance and bank-balance event object is including 'type' and 'balance' properties. The first property is type of the operation ('set', 'add', 'subtract', 'bankSet', 'bankAdd', 'bankSubtract') and the second is user's new balance after the operation was completed successfully.</b></li>
 <li><b>Now you can manually check the module updates using the new 'Economy.checkUpdates()' method.</b></li>
 <li><b>Added an additional 'Economy.ready' and 'Economy.errored' properties to check the module state.</b></li>
-<li><b>Now you can add a role to users on your Discord server. Click <a href="https://www.npmjs.com/package/discord-economy-super#shop-methods">here</a> for more info.</b></li>
+<li><b>Now you can add a role to users on your Discord server.</b></li>
 <li><b>Added a new 'shopItemBuy' and 'shopItemUse' events.</b></li>
 <li><b>Now if user try to buy an item when he reached the max amount of item in his inventory, the method will return a 'max' string.</b></li>
 <li><b>Now this module has a Support Server. Click <b><a href = "https://discord.gg/afUTRzfb">here</a></b> to join!</b></li>
@@ -483,8 +202,8 @@ The test will look like this:
 <li><b>Updated typings.</b></li>
 <li><b>Updated examples.</b></li>
 <li><b>discord.js is no longer imported in the module.</b></li>
-<li><b>Added a 'ready' and 'destroy' events. <a href = "https://www.npmjs.com/package/discord-economy-super#module-events">Learn more</a>.</b></li>
-<li><b>All balance and bank methods were moved to objects. <a href = "https://www.npmjs.com/package/discord-economy-super#balance-methods">Learn more</a>.</b></li>
+<li><b>Added a 'ready' and 'destroy' events. Click <a href = "https://des-docs.tk/#/docs/main/stable/class/Economy?scrollTo=e-ready">here</a> and <a href = "https://des-docs.tk/#/docs/main/stable/class/Economy?scrollTo=e-destroy">here</a> for more info.</b></li>
+<li><b>All balance and bank methods were moved to objects. Click <a href = "https://des-docs.tk/#/docs/main/stable/class/Balance">here</a> and <a href = "https://des-docs.tk/#/docs/main/stable/class/Bank">here</a> for more info.</b></li>
 <b>Here is the difference between v1.2.4 and v1.2.5.</b>
 
 ```diff
@@ -520,17 +239,28 @@ The test will look like this:
 <li><b>Updated README.md.</b></li>
 <li><b>Now 'ready' and 'destroy' events will return nothing (Void) instead of Boolean.</b></li>
 </ul>
-<b>1.2.7</b>
+<b>1.2.8</b>
 <ul>
 <li><b>Fixed typos.</b></li>
 <li><b>Fixed minor bugs.</b></li>
 <li><b>Item IDs in shop and inventory are now synced with the last element of array. It fixes the bug with similar item IDs in the shop and inventory.</b></li>
 </ul>
+<b>1.3.0</b>
+<ul>
+<li><b>Fixed typos.</b></li>
+<li><b>Fixed minor bugs.</b></li>
+<li><b>Updated README.md.</b></li>
+<li><b>Now this module has a <a href="https://des-docs.tk">documentation website</a>!</b></li>
+<li><b>Added an 'Economy.docs' property that contains a link to the documentation website.</b></li>
+<li><b>I think this is the last version of this module. Next versions would be only bugfixes or people's ideas. Thank you for using this module!</b></li>
+</ul>
+
 
 ## Useful Links
 <ul>
+<li><b><a href = "https://des-docs.tk">Documentation</a></b></li>
 <li><b><a href = "https://www.npmjs.com/package/discord-economy-super">NPM</a></b></li>
-<li><b><a href = "https://github.com/shadowplay1/discord-economy-super">Github</a></b></li>
+<li><b><a href = "https://github.com/shadowplay1/discord-economy-super">GitHub</a></b></li>
 <li><b><a href = "https://github.com/shadowplay1/discord-economy-super/tree/main/examples">Examples</a></b></li>
 <li><b><a href = "https://discord.gg/afUTRzfb">Discord Server</a></b></li>
 </ul>

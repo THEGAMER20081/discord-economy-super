@@ -1,4 +1,7 @@
-module.exports = class EconomyError extends Error {
+/**
+ * EconomyError class.
+ */
+class EconomyError extends Error {
     /**
      * Creates an 'EconomyError' error instance.
      * @param {String | Error} message Error message.
@@ -9,6 +12,11 @@ module.exports = class EconomyError extends Error {
             Error.captureStackTrace(this, this.constructor)
         }
         if (typeof message == 'string') super(message)
+        /**
+         * Error name.
+         * @type {string}
+         */
         this.name = 'EconomyError'
     }
 }
+module.exports = EconomyError

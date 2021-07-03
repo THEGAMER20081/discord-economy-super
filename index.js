@@ -16,6 +16,7 @@ Thank you for using for using Discord Economy Super <3
 // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 module.exports = require('./src/index')
 module.exports.version = require('./package.json').version
+module.exports.docs = 'https://des-docs.tk'
 // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ////////////////////////////////////////////////////////////
