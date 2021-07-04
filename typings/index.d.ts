@@ -40,6 +40,10 @@ declare module 'discord-economy-super' {
          */
         public errors: ErrorList
         /**
+         * Link to the module's documentation website.
+         */
+        public docs: 'https://des-docs.tk'
+        /**
          * 'EconomyError' Error instance.
          */
         public EconomyError: EconomyError
