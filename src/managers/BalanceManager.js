@@ -1,57 +1,51 @@
-const { writeFileSync, readFileSync } = require('fs')
-
 const Emitter = require('../classes/Emitter')
 const EconomyError = require('../classes/EconomyError')
 
-const ShopManager = require('../managers/ShopManager')
-const BankManager = require('../managers/BankManager')
-const CooldownManager = require('../managers/CooldownManager')
-const UtilsManager = require('../managers/UtilsManager')
+const FetchManager = require('./FetchManager')
+const DatabaseManager = require('./DatabaseManager')
 
-const errors = require('../structures/Errors')
-const DefaultOptions = require('../structures/DefaultOptions')
+const errors = require('../structures/errors')
+
 
 /**
 * Balance manager methods class.
-* @extends Emitter
+* @extends {Emitter}
 */
 class BalanceManager extends Emitter {
+
     /**
-      * Economy constructor options object. There's only needed options object properties for this manager to work properly.
-      * @param {Object} options Constructor options object.
-      * @param {String} options.storagePath Full path to a JSON file. Default: './storage.json'.
+     * Balance Manager.
+     * 
+     * @param {Object} options Economy constructor options object.
+     * There's only needed options object properties for this manager to work properly.
+     * 
+     * @param {String} options.storagePath Full path to a JSON file. Default: './storage.json'.
      */
-    constructor(options) {
-        super()
-        const Managers = require('../structures/Managers')
-        /**
-         * @private
-         * @type {BankManager}
-         */
-        this.bank = new Managers.BankManager(options)
-        /**
-         * @private
-         * @type {UtilsManager}
-         */
-        this.utils = new Managers.UtilsManager(options)
-        /**
-         * @private
-         * @type {CooldownManager}
-         */
-        this.cooldowns = new Managers.CooldownManager(options)
-        /**
-         * @private
-         * @type {ShopManager}
-         */
-        this.shop = new Managers.ShopManager(options)
+    constructor(options = {}) {
+        super(options)
+
         /**
          * Economy constructor options object.
-         * @type {?Object}
+         * @type {EconomyOptions}
+         * @private
          */
         this.options = options
 
-        if (!options?.storagePath) this.options.storagePath = DefaultOptions.storagePath
+        /**
+         * Fetch manager methods object.
+         * @type {FetchManager}
+         * @private
+         */
+        this.fetcher = new FetchManager(options)
+
+        /**
+         * Fetch manager methods object.
+         * @type {DatabaseManager}
+         * @private
+         */
+        this.database = new DatabaseManager(options)
     }
+
     /**
     * Fetches the user's balance.
     * @param {String} memberID Member ID
@@ -59,116 +53,202 @@ class BalanceManager extends Emitter {
     * @returns {Number} User's balance
     */
     fetch(memberID, guildID) {
-        if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
-        if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        return Number(this.utils.all()[guildID]?.[memberID]?.money || 0)
+        if (typeof memberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
+        }
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        return this.fetcher.fetchBalance(memberID, guildID)
     }
+
     /**
      * Sets the money amount on user's balance.
-     * @param {Number} amount Amount of money that you want to set
-     * @param {String} memberID Member ID
-     * @param {String} guildID Guild ID
-     * @param {String} reason The reason why you set the money
-     * @returns {Number} Money amount
+     * @param {Number} amount Money amount.
+     * @param {String} memberID Member ID.
+     * @param {String} guildID Guild ID.
+     * @param {String} reason The reason why you add the money.
+     * @returns {Number} Money amount.
      */
     set(amount, memberID, guildID, reason = null) {
-        if (isNaN(amount)) throw new EconomyError(errors.invalidTypes.amount + typeof amount)
-        if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
-        if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: this.cooldowns.daily(memberID, guildID),
-            workCooldown: this.cooldowns.work(memberID, guildID),
-            weeklyCooldown: this.cooldowns.weekly(memberID, guildID),
-            money: Number(amount),
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID)
+        const balance = this.fetcher.fetchBalance(memberID, guildID)
+
+        if (isNaN(amount)) {
+            throw new EconomyError(errors.invalidTypes.amount + typeof amount)
         }
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
-        this.emit('balanceSet', { type: 'set', guildID, memberID, amount: Number(amount), balance: Number(amount), reason })
-        return Number(amount)
+
+        if (typeof memberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
+        }
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        this.database.set(`${guildID}.${memberID}.money`, amount)
+
+        this.emit('balanceSet', {
+            type: 'set',
+            guildID,
+            memberID,
+            amount: Number(amount),
+            balance,
+            reason
+        })
+
+        return amount
     }
+
     /**
      * Adds the money amount on user's balance.
-     * @param {Number} amount Amount of money that you want to add
-     * @param {String} memberID Member ID
-     * @param {String} guildID Guild ID
-     * @param {String} reason The reason why you add the money
-     * @returns {Number} Money amount
+     * @param {Number} amount Money amount.
+     * @param {String} memberID Member ID.
+     * @param {String} guildID Guild ID.
+     * @param {String} reason The reason why you add the money.
+     * @returns {Number} Money amount.
      */
     add(amount, memberID, guildID, reason = null) {
-        if (isNaN(amount)) throw new EconomyError(errors.invalidTypes.amount + typeof amount)
-        if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
-        if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        const money = JSON.parse(readFileSync(this.options.storagePath).toString())[guildID]?.[memberID]?.money || 0
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: this.cooldowns.daily(memberID, guildID),
-            workCooldown: this.cooldowns.work(memberID, guildID),
-            weeklyCooldown: this.cooldowns.weekly(memberID, guildID),
-            money: Number(money) + Number(amount),
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID)
+        const balance = this.fetcher.fetchBalance(memberID, guildID)
+
+        if (isNaN(amount)) {
+            throw new EconomyError(errors.invalidTypes.amount + typeof amount)
         }
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
-        this.emit('balanceAdd', { type: 'add', guildID, memberID, amount: Number(amount), balance: Number(money) + Number(amount), reason })
-        return Number(amount)
+
+        if (typeof memberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
+        }
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        this.database.add(`${guildID}.${memberID}.money`, amount)
+
+        this.emit('balanceAdd', {
+            type: 'add',
+            guildID,
+            memberID,
+            amount: Number(amount),
+            balance: balance + amount,
+            reason
+        })
+
+        return amount
     }
+
     /**
-    * Subtracts the money amount from user's balance.
-    * @param {Number} amount Amount of money that you want to subtract
-    * @param {String} memberID Member ID
-    * @param {String} guildID Guild ID
-    * @param {String} reason The reason why you subtract the money
-    * @returns {Number} Money amount
-    */
+     * Subtracts the money amount on user's balance.
+     * @param {Number} amount Money amount.
+     * @param {String} memberID Member ID.
+     * @param {String} guildID Guild ID.
+     * @param {String} reason The reason why you add the money.
+     * @returns {Number} Money amount.
+     */
     subtract(amount, memberID, guildID, reason = null) {
-        if (isNaN(amount)) throw new EconomyError(errors.invalidTypes.amount + typeof amount)
-        if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
-        if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        const money = JSON.parse(readFileSync(this.options.storagePath).toString())[guildID]?.[memberID]?.money || 0
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: this.cooldowns.daily(memberID, guildID),
-            workCooldown: this.cooldowns.work(memberID, guildID),
-            weeklyCooldown: this.cooldowns.weekly(memberID, guildID),
-            money: Number(money) - Number(amount),
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID),
+        const balance = this.fetcher.fetchBalance(memberID, guildID)
+
+        if (isNaN(amount)) {
+            throw new EconomyError(errors.invalidTypes.amount + typeof amount)
         }
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
-        this.emit('balanceSubtract', { type: 'subtract', guildID, memberID, amount: Number(amount), balance: Number(money) - Number(amount), reason })
-        return Number(amount)
+
+        if (typeof memberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
+        }
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        this.database.subtract(`${guildID}.${memberID}.money`, amount)
+
+        this.emit('balanceSubtract', {
+            type: 'subtract',
+            guildID,
+            memberID,
+            amount: Number(amount),
+            balance: balance - amount,
+            reason
+        })
+
+        return amount
     }
+
     /**
      * Shows a money leaderboard for your server
      * @param {String} guildID Guild ID
-     * @returns {BalanceLeaderboard} Sorted leaderboard array
+     * @returns {BalanceLeaderboard[]} Sorted leaderboard array
      */
     leaderboard(guildID) {
-        if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        let serverData = this.utils.all()[guildID]
-        if (!serverData) return []
-        let lb = []
-        let users = Object.keys(serverData)
-        let ranks = Object.values(this.utils.all()[guildID]).map(x => x.money)
-        for (let i in users) lb.push({ index: Number(i) + 1, userID: users[i], money: Number(ranks[i]) })
-        return lb.sort((a, b) => b.money - a.money).filter(x => !isNaN(x.money))
+        const lb = []
+        const data = this.fetcher.fetchAll()
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        const guildData = data[guildID]
+        if (!guildData) return []
+
+        const users = Object.keys(guildData)
+        const ranks = Object.values(guildData).map(x => x.money).filter(x => !isNaN(x))
+
+        for (const i in ranks) lb.push({
+            index: Number(i) + 1,
+            userID: users[i],
+            money: Number(ranks[i])
+        })
+
+        return lb.sort((a, b) => a.money + b.money)
+    }
+
+    /**
+     * Sends the money to the specified user.
+     * @param {String} guildID Guild ID.
+     * @param {PayingOptions} options Paying options.
+     * @returns {Number} How much money was sent.
+     */
+    pay(guildID, options = {}) {
+        const {
+            amount, senderMemberID,
+            recipientMemberID,
+            sendingReason, receivingReason
+        } = options
+
+        if (typeof guildID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
+        }
+
+        if (isNaN(amount)) {
+            throw new EconomyError(errors.invalidTypes.amount + typeof amount)
+        }
+
+        if (typeof senderMemberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.senderMemberID + typeof memberID)
+        }
+
+        if (typeof recipientMemberID !== 'string') {
+            throw new EconomyError(errors.invalidTypes.recipientMemberID + typeof memberID)
+        }
+
+        this.add(amount, recipientMemberID, guildID, receivingReason || 'receiving money from user')
+        this.subtract(amount, senderMemberID, guildID, sendingReason || 'sending money to user')
+
+        return true
     }
 }
 
 /**
- * Balance leaderboard object.
- * @typedef {Object} BalanceLeaderboard
- * @property {Number} index User's place in the top.
- * @property {String} userID User's ID.
- * @property {Number} money User's amount of money.
+ * Paying options.
+ * @typedef {Object} PayingOptions
+ * @property {Number} amount Amount of money to send.
+ * @property {String} senderMemberID A member ID who will send the money.
+ * @property {String} recipientMemberID A member ID who will receive the money.
+ * @property {String} [sendingReason='sending money to user'] 
+ * The reason of subtracting the money from sender. (example: "sending money to {'user}")
+ * @property {String} [receivingReason='receiving money from user']
+ * The reason of subtracting the money from sender. (example: "receiving money from {user}")
  */
 
 /**

@@ -1,40 +1,58 @@
-////////////////////////////////////////////////////////////
+const EconomyError = require('./src/classes/EconomyError')
+const errors = require('./src/structures/errors')
 
-/*
-Hello, coder!
-If you reading this, you interested in my module and code.
-This is open-source JSON-based economy framework for Discord bots that easy to setup and use.
-You can read the documentation on module's npmjs page:
-https://www.npmjs.com/package/discord-economy-super
-Please, report any bug if you found it. I really appreciate it.
-Update 1.1.5 is the biggest update in module's history. I put much effort and time to code it. I really hope you will like it <3
-If you have any questions or need help, join the Support server:
-https://discord.gg/4pWKq8vUnb
-Thank you for using for using Discord Economy Super <3
-*/
+const DatabaseManager = require('./src/managers/DatabaseManager')
+const FetchManager = require('./src/managers/FetchManager')
 
-// VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+const UtilsManager = require('./src/managers/UtilsManager')
 
-module.exports = require('./src/index')
+const BalanceManager = require('./src/managers/BalanceManager')
+const BankManager = require('./src/managers/BankManager')
 
+const RewardManager = require('./src/managers/RewardManager')
+const CooldownManager = require('./src/managers/CooldownManager')
 
-/**
-* Module version.
-*/
-module.exports.version = require('./package.json').version
+const ShopManager = require('./src/managers/ShopManager')
+const InventoryManager = require('./src/managers/InventoryManager')
+
+const SettingsManager = require('./src/managers/SettingsManager')
 
 
-/**
-* Link to the module's documentation website.
-*/
-module.exports.docs = 'https://des-docs.tk'
+const colors =  {
+    red: '\x1b[31m',
+    cyan: '\x1b[36m',
+    reset: '\x1b[0m'
+}
 
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+if (Number(process.version.split('.')[0]) < 14) {
+    const err = new EconomyError(errors.oldNodeVersion + process.version)
 
-////////////////////////////////////////////////////////////
-/*
---Contacts--
-Discord: ShadowPlay#9706
-Discord Server: https://discord.gg/4pWKq8vUnb
-*/
-////////////////////////////////////////////////////////////
+    console.log(`${colors.red}Failed to start the module:${colors.cyan}`)
+    console.log(err, colors.reset)
+
+    process.exit(1)
+}
+
+
+const Economy = require('./src/index')
+
+module.exports = Object.assign(Economy, {
+    version: require('./package.json').version,
+    docs: 'https://des-docs.tk',
+
+    DatabaseManager: DatabaseManager,
+    FetchManager: FetchManager,
+
+    UtilsManager: UtilsManager,
+
+    BalanceManager: BalanceManager,
+    BankManager: BankManager,
+
+    RewardManager: RewardManager,
+    CooldownManager: CooldownManager,
+
+    ShopManager: ShopManager,
+    InventoryManager: InventoryManager,
+
+    SettingsManager: SettingsManager
+})

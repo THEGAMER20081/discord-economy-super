@@ -1,15 +1,16 @@
-const { writeFileSync, readFileSync } = require('fs')
+const ms = require('../structures/ms')
 
-const Emitter = require('../classes/Emitter')
 const EconomyError = require('../classes/EconomyError')
 
-const errors = require('../structures/Errors')
-const Managers = require('../structures/Managers')
-const DefaultOptions = require('../structures/DefaultOptions')
-
-const ms = require('../../ms')
 const BalanceManager = require('./BalanceManager')
-const BankManager = require('./BankManager')
+const CooldownManager = require('./CooldownManager')
+
+const DatabaseManager = require('./DatabaseManager')
+const SettingsManager = require('./SettingsManager')
+
+const errors = require('../structures/errors')
+const UtilsManager = require('./UtilsManager')
+
 const parse = ms => ({
     days: Math.floor(ms / 86400000),
     hours: Math.floor(ms / 3600000 % 24),
@@ -20,62 +21,69 @@ const parse = ms => ({
 
 /**
 * Reward manager methods class.
-* @extends Emitter
 */
-class RewardManager extends Emitter {
+class RewardManager {
+
     /**
-      * Economy constructor options object. There's only needed options object properties for this manager to work properly.
-      * @param {Object} options Constructor options object.
+      * Reward Manager.
+      * 
+      * @param {Object} options Economy constructor options object.
+      * There's only needed options object properties for this manager to work properly.
+      * 
       * @param {String} options.storagePath Full path to a JSON file. Default: './storage.json'.
       * @param {Number} options.dailyCooldown Cooldown for Daily Command (in ms). Default: 24 Hours (60000 * 60 * 24) ms
       * @param {Number} options.workCooldown Cooldown for Work Command (in ms). Default: 1 Hour (60000 * 60) ms
       * @param {Number} options.dailyAmount Amount of money for Daily Command. Default: 100.
-      * @param {Number} options.weeklyCooldown Cooldown for Weekly Command (in ms). Default: 7 Days (60000 * 60 * 24 * 7) ms
+      * @param {Number} options.weeklyCooldown
+      * Cooldown for Weekly Command (in ms). Default: 7 Days (60000 * 60 * 24 * 7) ms
       * @param {Number} options.weeklyAmount Amount of money for Weekly Command. Default: 1000.
       * @param {Number | Array} options.workAmount Amount of money for Work Command. Default: [10, 50].
      */
     constructor(options) {
-        super()
-        const ShopManager = require('./ShopManager')
-        const CooldownManager = require('./CooldownManager')
-        const data = Managers.Functions(options)
+
         /**
+         * Economy options object.
+         * @type {EconomyOptions}
          * @private
-         * @type {BalanceManager}
-         */
-        this.balance = data.balance
-        /**
-         * @private
-         * @type {BankManager}
-         */
-        this.bank = data.bank
-        /**
-         * @private
-         * @type {ShopManager}
-         */
-        this.shop = new ShopManager(options)
-        /**
-         * @private
-         * @type {CooldownManager}
-         */
-        this.cooldowns = new CooldownManager(options)
-        /**
-         * Economy constructor options object.
-         * @type {?Object}
          */
         this.options = options
 
-        if (!options?.storagePath) this.options.storagePath = DefaultOptions.storagePath
+        /**
+         * Utils manager methods object.
+         * @type {UtilsManager}
+         * @private
+         */
+        this.utils = new UtilsManager(options)
 
-        if (!options?.dailyAmount) this.options.dailyAmount = DefaultOptions.dailyAmount
-        if (!options?.dailyCooldown) this.options.dailyCooldown = DefaultOptions.dailyCooldown
+        /**
+        * Database manager methods object.
+        * @type {DatabaseManager}
+        * @private
+        */
+        this.database = new DatabaseManager(options)
 
-        if (!options?.workAmount) this.options.workAmount = DefaultOptions.workAmount
-        if (!options?.workCooldown) this.options.workCooldown = DefaultOptions.workCooldown
+        /**
+         * Cooldown manager methods object.
+         * @type {CooldownManager}
+         * @private
+         */
+        this.cooldowns = new CooldownManager(options)
 
-        if (!options?.weeklyAmount) this.options.weeklyAmount = DefaultOptions.weeklyAmount
-        if (!options?.weeklyCooldown) this.options.weeklyCooldown = DefaultOptions.weeklyCooldown
+        /**
+         * Balance manager methods object.
+         * @type {BalanceManager}
+         * @private
+         */
+        this.balance = new BalanceManager(options)
+
+        /**
+        * Settings manager methods object.
+        * @type {SettingsManager}
+        * @private
+        */
+        this.settings = new SettingsManager(options)
     }
+
     /**
      * Adds a daily reward on user's balance.
      * @param {String} memberID Member ID.
@@ -86,35 +94,42 @@ class RewardManager extends Emitter {
     daily(memberID, guildID, reason = 'claimed the daily reward') {
         if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
         if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        let cooldown = this.options.dailyCooldown
-        let reward = this.options.dailyAmount
-        let cd = JSON.parse(readFileSync(this.options.storagePath).toString())[guildID]?.[memberID]?.dailyCooldown || null
-        if (cd !== null && cooldown - (Date.now() - cd) > 0) return {
+
+        const cooldown = this.settings.all(guildID).dailyCooldown || this.options.dailyCooldown
+        const dailyReward = this.settings.all(guildID).dailyAmount || this.options.dailyAmount
+        let reward
+
+        if (Array.isArray(dailyReward)) {
+            const min = dailyReward[0]
+            const max = dailyReward[1]
+
+            if (dailyReward.length == 1) reward = dailyReward[0]
+            else reward = Math.floor(Math.random() * (Number(min) - Number(max)) + Number(max))
+        }
+
+        else reward = dailyReward
+
+        const userCooldown = this.cooldowns.daily(memberID, guildID)
+        const cooldownEnd = cooldown - (Date.now() - userCooldown)
+
+        if (userCooldown !== null && cooldownEnd > 0) return {
             status: false,
-            value: parse(cooldown - (Date.now() - cd)),
-            pretty: String(ms(cooldown - (Date.now() - cd))),
-            reward
+            value: parse(cooldownEnd),
+            pretty: ms(cooldownEnd),
+            reward: dailyReward
         }
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: Date.now(),
-            workCooldown: this.cooldowns.work(memberID, guildID),
-            weeklyCooldown: this.cooldowns.weekly(memberID, guildID),
-            money: this.balance.fetch(memberID, guildID),
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID)
-        }
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
+
         this.balance.add(reward, memberID, guildID, reason)
+        this.database.set(`${guildID}.${memberID}.dailyCooldown`, Date.now())
+
         return {
             status: true,
-            value: Number(reward),
+            value: reward,
             pretty: reward,
-            reward
+            reward: dailyReward
         }
     }
+
     /**
      * Adds a work reward on user's balance.
      * @param {String} memberID Member ID.
@@ -125,43 +140,42 @@ class RewardManager extends Emitter {
     work(memberID, guildID, reason = 'claimed the work reward') {
         if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
         if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        let cooldown = this.options.workCooldown
-        let workAmount = this.options.workAmount
-        let reward = Array.isArray(workAmount) ? Math.ceil(Math.random() * (Number(workAmount[0]) - Number(workAmount[1])) + Number(workAmount[1])) : this.options.workAmount
-        let cd = JSON.parse(readFileSync(this.options.storagePath).toString())[guildID]?.[memberID]?.workCooldown || null
-        if (cd !== null && cooldown - (Date.now() - cd) > 0) return {
+
+        const cooldown = this.settings.all(guildID).workCooldown || this.options.workCooldown
+        const workReward = this.settings.all(guildID).workAmount || this.options.workAmount
+        let reward
+
+        if (Array.isArray(workReward)) {
+            const min = workReward[0]
+            const max = workReward[1]
+
+            if (workReward.length == 1) reward = workReward[0]
+            else reward = Math.floor(Math.random() * (Number(min) - Number(max)) + Number(max))
+        }
+
+        else reward = workReward
+
+        const userCooldown = this.cooldowns.work(memberID, guildID)
+        const cooldownEnd = cooldown - (Date.now() - userCooldown)
+
+        if (userCooldown !== null && cooldownEnd > 0) return {
             status: false,
-            value: parse(cooldown - (Date.now() - cd)),
-            pretty: String(ms(cooldown - (Date.now() - cd))),
-            reward: this.options.workAmount
+            value: parse(cooldownEnd),
+            pretty: ms(cooldownEnd),
+            reward: workReward
         }
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: this.cooldowns.daily(memberID, guildID),
-            workCooldown: Date.now(),
-            weeklyCooldown: this.cooldowns.weekly(memberID, guildID),
-            money: this.balance.fetch(memberID, guildID) + reward,
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID)
-        }
-        this.emit('balanceAdd', {
-            type: 'add',
-            guildID,
-            memberID,
-            amount: reward,
-            balance: this.balance.fetch(memberID, guildID),
-            reason
-        })
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
+
+        this.balance.add(reward, memberID, guildID, reason)
+        this.database.set(`${guildID}.${memberID}.workCooldown`, Date.now())
+
         return {
             status: true,
-            value: Number(reward),
+            value: reward,
             pretty: reward,
-            reward: this.options.workAmount
+            reward: workReward
         }
     }
+
     /**
      * Adds a weekly reward on user's balance.
      * @param {String} memberID Member ID.
@@ -172,33 +186,39 @@ class RewardManager extends Emitter {
     weekly(memberID, guildID, reason = 'claimed the weekly reward') {
         if (typeof memberID !== 'string') throw new EconomyError(errors.invalidTypes.memberID + typeof memberID)
         if (typeof guildID !== 'string') throw new EconomyError(errors.invalidTypes.guildID + typeof guildID)
-        let cooldown = this.options.weeklyCooldown
-        let reward = this.options.weeklyAmount
-        let cd = JSON.parse(readFileSync(this.options.storagePath).toString())[guildID]?.[memberID]?.weeklyCooldown || null
-        if (cd !== null && cooldown - (Date.now() - cd) > 0) return {
+
+        const cooldown = this.settings.all(guildID).weeklyCooldown || this.options.weeklyCooldown
+        const weeklyReward = this.settings.all(guildID).weeklyAmount || this.options.weeklyAmount
+        let reward
+
+        if (Array.isArray(weeklyReward)) {
+            const min = weeklyReward[0]
+            const max = weeklyReward[1]
+
+            if (weeklyReward.length == 1) reward = weeklyReward[0]
+            else reward = Math.floor(Math.random() * (Number(min) - Number(max)) + Number(max))
+        }
+
+        else reward = weeklyReward
+
+        const userCooldown = this.cooldowns.weekly(memberID, guildID)
+        const cooldownEnd = cooldown - (Date.now() - userCooldown)
+
+        if (userCooldown !== null && cooldownEnd > 0) return {
             status: false,
-            value: parse(cooldown - (Date.now() - cd)),
-            pretty: String(ms(cooldown - (Date.now() - cd))),
-            reward
+            value: parse(cooldownEnd),
+            pretty: ms(cooldownEnd),
+            reward: weeklyReward
         }
-        let obj = JSON.parse(readFileSync(this.options.storagePath).toString())
-        if (!obj[guildID]) obj[guildID] = {}
-        obj[guildID][memberID] = {
-            dailyCooldown: this.cooldowns.daily(memberID, guildID),
-            workCooldown: this.cooldowns.work(memberID, guildID),
-            weeklyCooldown: Date.now(),
-            money: this.balance.fetch(memberID, guildID),
-            bank: this.bank.fetch(memberID, guildID),
-            inventory: this.shop.inventory(memberID, guildID),
-            history: this.shop.history(memberID, guildID)
-        }
-        writeFileSync(this.options.storagePath, JSON.stringify(obj, null, '\t'))
-        this.balance.add(this.options.weeklyAmount, memberID, guildID, reason)
+
+        this.balance.add(reward, memberID, guildID, reason)
+        this.database.set(`${guildID}.${memberID}.weeklyCooldown`, Date.now())
+
         return {
             status: true,
-            value: Number(reward),
+            value: reward,
             pretty: reward,
-            reward
+            reward: weeklyReward
         }
     }
 }
@@ -208,7 +228,7 @@ class RewardManager extends Emitter {
  * @property {Boolean} status The status of operation.
  * @property {CooldownData} value Reward or cooldown time object.
  * @property {String | Number} pretty Reward or formatted cooldown time object.
- * @property {Number | Array<Number>} reward Amount of money for the reward from constructor options.
+ * @property {Number | Number[]} reward Amount of money for the reward from constructor options.
  */
 
 /**
